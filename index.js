@@ -9,6 +9,7 @@ const {
 
 const { DisTube } = require('distube');
 const { SpotifyPlugin } = require('@distube/spotify');
+const ffmpegPath = require('ffmpeg-static');
 require('dotenv').config();
 
 const TOKEN = process.env.TOKEN;
@@ -18,7 +19,7 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
 });
 
-const ffmpegPath = require('ffmpeg-static');
+
 
 // Initialize DisTube v5
 const distube = new DisTube(client, {
