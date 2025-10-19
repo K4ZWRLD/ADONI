@@ -1,5 +1,0 @@
-[build]
-builder = "nixpacks"
-
-[build.nixpacksPlan.phases.setup]
-nixPkgs = ["nodejs-22_x", "python3"]
