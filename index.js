@@ -242,6 +242,7 @@ client.on('interactionCreate', async interaction => {
 // DisTube events
 distube.on('playSong', (queue, song) => {
   console.log('[DISTUBE] Playing song:', song.name);
+  console.log('[DISTUBE] Stream URL:', song.streamURL ? 'Available' : 'MISSING');
   const embed = new EmbedBuilder()
     .setTitle('🎵 Now Playing')
     .setDescription(`[${song.name}](${song.url})`)
