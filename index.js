@@ -15,6 +15,9 @@ const { exec } = require('child_process');
 
 require('dotenv').config();
 
+// Set Python path for yt-dlp
+process.env.PYTHON = '/usr/bin/python3';
+
 // Verify ffmpeg installation
 console.log('FFmpeg path from ffmpeg-static:', ffmpeg);
 
