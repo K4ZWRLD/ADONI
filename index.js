@@ -91,7 +91,7 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
 })();
 
 // Bot ready
-client.once('ready', () => {
+client.once('clientReady', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
   console.log(`🎵 Music bot is ready in ${client.guilds.cache.size} servers`);
 });
@@ -128,11 +128,19 @@ client.on('interactionCreate', async interaction => {
         return interaction.editReply('❌ You must provide a valid URL or search term.');
       }
 
-      await distube.play(voiceChannel, query, { 
-        member: interaction.member, 
-        textChannel: interaction.channel 
-      });
-      return interaction.editReply(`🔍 Searching for: **${query}**`);
+      console.log(`[PLAY] User: ${interaction.user.tag}, Query: ${query}`);
+
+      try {
+        await distube.play(voiceChannel, query, { 
+          member: interaction.member, 
+          textChannel: interaction.channel 
+        });
+        console.log('[PLAY] Successfully called distube.play()');
+        return interaction.editReply(`🔍 Searching for: **${query}**`);
+      } catch (playError) {
+        console.error('[PLAY] Error:', playError);
+        return interaction.editReply(`❌ Failed to play: ${playError.message}`);
+      }
 
     } else if (commandName === 'skip') {
       const queue = distube.getQueue(interaction.guildId);
@@ -233,6 +241,7 @@ client.on('interactionCreate', async interaction => {
 
 // DisTube events
 distube.on('playSong', (queue, song) => {
+  console.log('[DISTUBE] Playing song:', song.name);
   const embed = new EmbedBuilder()
     .setTitle('🎵 Now Playing')
     .setDescription(`[${song.name}](${song.url})`)
@@ -247,19 +256,27 @@ distube.on('playSong', (queue, song) => {
 });
 
 distube.on('addSong', (queue, song) => {
+  console.log('[DISTUBE] Added song:', song.name);
   queue.textChannel.send(`✅ Added to queue: **${song.name}** • \`${song.formattedDuration}\` • ${song.user}`);
 });
 
 distube.on('addList', (queue, playlist) => {
+  console.log('[DISTUBE] Added playlist:', playlist.name);
   queue.textChannel.send(`✅ Added playlist: **${playlist.name}** (${playlist.songs.length} songs)`);
 });
 
 distube.on('finish', queue => {
+  console.log('[DISTUBE] Queue finished');
   queue.textChannel.send('✅ Queue finished!');
 });
 
+distube.on('initQueue', queue => {
+  console.log('[DISTUBE] Initializing queue');
+  queue.textChannel.send('⏳ Preparing to play... This may take a moment.');
+});
+
 distube.on('error', (channel, err) => {
-  console.error('DisTube error:', err);
+  console.error('[DISTUBE] Error:', err);
   if (channel) {
     channel.send(`❌ An error occurred: ${err.message.slice(0, 100)}`);
   }
