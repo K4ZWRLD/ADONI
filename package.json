@@ -8,14 +8,13 @@
   "dependencies": {
     "@discordjs/voice": "^0.16.1",
     "@distube/spotify": "^2.0.1",
-    "@distube/youtube": "^1.0.3",
+    "@distube/yt-dlp": "^2.0.1",
     "discord.js": "^14.23.2",
     "distube": "^5.0.7",
     "dotenv": "^17.2.3",
     "ffmpeg-static": "^5.2.0",
     "libsodium-wrappers": "^0.7.13",
-    "opusscript": "^0.1.1",
-    "@distube/ytdl-core": "^4.14.4"
+    "opusscript": "^0.1.1"
   },
   "engines": {
     "node": ">=22.0.0"
