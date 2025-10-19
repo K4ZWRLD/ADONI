@@ -45,18 +45,10 @@ const client = new Client({
 
 // Initialize DisTube
 const distube = new DisTube(client, {
-  emitNewSongOnly: true,
-  ffmpeg: {
-    path: ffmpeg
-  },
   plugins: [
     new SpotifyPlugin(),
     new YtDlpPlugin()
-  ],
-  searchSongs: 1,
-  nsfw: false,
-  emitAddSongWhenCreatingQueue: false,
-  emitAddListWhenCreatingQueue: false
+  ]
 });
 
 // Slash commands
