@@ -7,6 +7,7 @@
   },
   "dependencies": {
     "@distube/spotify": "^2.0.1",
+    "@distube/yt-dlp": "^2.0.1",
     "discord.js": "^14.23.2",
     "distube": "^5.0.7",
     "dotenv": "^17.2.3",
