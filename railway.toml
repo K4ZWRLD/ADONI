@@ -1,0 +1,15 @@
+[build]
+builder = "nixpacks"
+
+[build.nixpacksPlan.phases.setup]
+nixPkgs = ["nodejs-22_x", "python3"]
+```
+
+2. **`.node-version`** (new file):
+```
+22
+```
+
+3. **`Aptfile`** (already exists):
+```
+ffmpeg
