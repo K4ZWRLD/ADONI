@@ -45,6 +45,9 @@ const client = new Client({
 
 // Initialize DisTube
 const distube = new DisTube(client, {
+  ffmpeg: {
+    path: ffmpeg
+  },
   plugins: [
     new SpotifyPlugin(),
     new YtDlpPlugin()
