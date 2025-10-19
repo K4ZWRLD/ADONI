@@ -11,11 +11,24 @@ const { DisTube } = require('distube');
 const { SpotifyPlugin } = require('@distube/spotify');
 const { YtDlpPlugin } = require('@distube/yt-dlp');
 const ffmpeg = require('ffmpeg-static');
+const { exec } = require('child_process');
 
 require('dotenv').config();
 
-// Set ffmpeg path for DisTube
+// Verify ffmpeg installation
+console.log('FFmpeg path from ffmpeg-static:', ffmpeg);
+
+// Set ffmpeg path
 process.env.FFMPEG_PATH = ffmpeg;
+
+// Test ffmpeg
+exec(`"${ffmpeg}" -version`, (error, stdout) => {
+  if (error) {
+    console.error('❌ FFmpeg test failed:', error.message);
+  } else {
+    console.log('✅ FFmpeg is working:', stdout.split('\n')[0]);
+  }
+});
 
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
@@ -33,17 +46,21 @@ const client = new Client({
 // Initialize DisTube with error handling
 const distube = new DisTube(client, {
   emitNewSongOnly: true,
+  ffmpeg: {
+    path: ffmpeg
+  },
   plugins: [
-    new SpotifyPlugin(),
-    new YtDlpPlugin()
+    new SpotifyPlugin({
+      emitEventsAfterFetching: true
+    }),
+    new YtDlpPlugin({
+      update: false
+    })
   ],
-  leaveOnEmpty: true,
-  leaveOnFinish: true,
-  leaveOnStop: true,
-  emptyCooldown: 30,
   searchSongs: 1,
   nsfw: false,
-  emitAddSongWhenCreatingQueue: false
+  emitAddSongWhenCreatingQueue: false,
+  emitAddListWhenCreatingQueue: false
 });
 
 // Slash commands
