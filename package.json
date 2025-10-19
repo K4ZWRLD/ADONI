@@ -6,6 +6,7 @@
     "start": "node index.js"
   },
   "dependencies": {
+    "@discordjs/voice": "^0.16.1",
     "@distube/spotify": "^2.0.1",
     "@distube/yt-dlp": "^2.0.1",
     "discord.js": "^14.23.2",
@@ -16,6 +17,6 @@
     "opusscript": "^0.1.1"
   },
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=18.0.0"
   }
 }
