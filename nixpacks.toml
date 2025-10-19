@@ -1,11 +1,8 @@
 [phases.setup]
-nixPkgs = ["nodejs_22", "python3", "ffmpeg", "python311Packages.pip"]
+nixPkgs = ["nodejs_22", "python3", "ffmpeg", "yt-dlp"]
 
 [phases.install]
-cmds = [
-  "pip install --user yt-dlp",
-  "npm ci"
-]
+cmds = ["npm ci"]
 
 [start]
 cmd = "node index.js"
