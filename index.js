@@ -14,27 +14,6 @@ const { exec } = require('child_process');
 
 require('dotenv').config();
 
-// Set Python path for yt-dlp
-process.env.PYTHON = '/usr/bin/python3';
-
-// Check if Python is available
-exec('which python3', (error, stdout, stderr) => {
-  if (error) {
-    console.error('❌ Python3 not found:', error.message);
-  } else {
-    console.log('✅ Python3 found at:', stdout.trim());
-    process.env.PYTHON = stdout.trim();
-  }
-});
-
-exec('python3 --version', (error, stdout, stderr) => {
-  if (error) {
-    console.error('❌ Python3 version check failed:', error.message);
-  } else {
-    console.log('✅ Python3 version:', stdout.trim() || stderr.trim());
-  }
-});
-
 // Verify ffmpeg installation
 console.log('FFmpeg path from ffmpeg-static:', ffmpeg);
 
