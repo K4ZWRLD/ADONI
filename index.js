@@ -18,11 +18,15 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
 });
 
+const ffmpegPath = require('ffmpeg-static');
+
 // Initialize DisTube v5
 const distube = new DisTube(client, {
   emitNewSongOnly: true,
   plugins: [new SpotifyPlugin()],
+  ffmpeg: ffmpegPath, // <- add this
 });
+
 
 // Slash commands
 const commands = [
