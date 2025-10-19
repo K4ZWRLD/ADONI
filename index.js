@@ -9,6 +9,7 @@ const {
 
 const { DisTube } = require('distube');
 const { SpotifyPlugin } = require('@distube/spotify');
+const { YouTubePlugin } = require('@distube/youtube');
 const ffmpeg = require('ffmpeg-static');
 const { exec } = require('child_process');
 
@@ -48,6 +49,7 @@ const distube = new DisTube(client, {
     path: ffmpeg
   },
   plugins: [
+    new YouTubePlugin(),
     new SpotifyPlugin()
   ]
 });
