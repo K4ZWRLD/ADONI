@@ -1,23 +1,18 @@
 const { 
-  Client,
-  GatewayIntentBits,
-  SlashCommandBuilder,
-  Routes,
-  REST,
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle
+  Client, 
+  GatewayIntentBits, 
+  SlashCommandBuilder, 
+  Routes, 
+  REST, 
+  EmbedBuilder 
 } = require('discord.js');
-
 const { 
-  joinVoiceChannel,
-  createAudioPlayer,
-  createAudioResource,
-  AudioPlayerStatus,
-  NoSubscriberBehavior
+  joinVoiceChannel, 
+  createAudioPlayer, 
+  createAudioResource, 
+  AudioPlayerStatus, 
+  NoSubscriberBehavior 
 } = require('@discordjs/voice');
-
 const play = require('play-dl');
 require('dotenv').config();
 
@@ -28,31 +23,24 @@ const client = new Client({
 const TOKEN = process.env.TOKEN;
 const CLIENT_ID = process.env.CLIENT_ID;
 
-// Guild queues
+// Guild-specific queues
 const queues = new Map();
 
-// Audio player
+// Audio player (shared per guild)
 const player = createAudioPlayer({ behaviors: { noSubscriber: NoSubscriberBehavior.Pause } });
 
-// Helpers
+// Helper: format seconds to mm:ss
 function formatDuration(sec) {
   const min = Math.floor(sec / 60);
   const s = Math.floor(sec % 60);
   return `${min}:${s < 10 ? '0' : ''}${s}`;
 }
 
-function resolveSongUrl(info) {
-  if (!info) return null;
-  if (info.url && info.url.startsWith('http')) return info.url;
-  if (info.id) return `https://www.youtube.com/watch?v=${info.id}`;
-  return null;
-}
-
+// Helper: create a song object
 function createSongObject(info, requester) {
-  const url = resolveSongUrl(info);
   return {
     title: info.title || 'Unknown Title',
-    url,
+    url: info.url || (info.id ? `https://www.youtube.com/watch?v=${info.id}` : null),
     duration: info.durationInSec ? formatDuration(info.durationInSec) : 'Unknown',
     durationInSec: info.durationInSec || 0,
     thumbnail: info.thumbnails?.[0]?.url || null,
@@ -60,8 +48,8 @@ function createSongObject(info, requester) {
   };
 }
 
-// Play next song
-async function playNext(interaction, guildId) {
+// Play next song in a guild
+async function playNext(guildId) {
   const queue = queues.get(guildId);
   if (!queue || queue.songs.length === 0) {
     if (queue?.connection) queue.connection.destroy();
@@ -74,7 +62,7 @@ async function playNext(interaction, guildId) {
   queue.startTime = Date.now();
 
   try {
-    if (!song.url) return playNext(interaction, guildId);
+    if (!song.url) return playNext(guildId);
 
     const stream = await play.stream(song.url);
     const resource = createAudioResource(stream.stream, { inputType: stream.type });
@@ -92,52 +80,27 @@ async function playNext(interaction, guildId) {
       .setColor(0x2f3136)
       .setTimestamp();
 
-    queue.currentMessage = await interaction.followUp({ embeds: [embed] });
-
+    queue.currentMessage = await queue.interaction.followUp({ embeds: [embed] });
   } catch (err) {
     console.error('Error playing song:', err);
-    if (interaction?.followUp) await interaction.followUp('❌ Failed to play this track, skipping...');
-    playNext(interaction, guildId);
+    if (queue?.interaction) await queue.interaction.followUp('❌ Failed to play this track, skipping...');
+    playNext(guildId);
   }
 }
 
-// Progress bar updater
-setInterval(() => {
-  queues.forEach(queue => {
-    if (queue.currentMessage && queue.currentSong && player.state.status === AudioPlayerStatus.Playing) {
-      const elapsed = Math.min((Date.now() - queue.startTime) / 1000, queue.currentSong.durationInSec);
-      const total = queue.currentSong.durationInSec;
-      const progress = Math.floor((elapsed / total) * 10);
-      const bar = '─'.repeat(progress) + '🔘' + '─'.repeat(10 - progress);
-
-      const embed = new EmbedBuilder()
-        .setTitle('🎶 Now Playing')
-        .setDescription(`[${queue.currentSong.title}](${queue.currentSong.url})`)
-        .addFields(
-          { name: 'Duration', value: queue.currentSong.duration, inline: true },
-          { name: 'Requested by', value: queue.currentSong.requester || 'Unknown', inline: true }
-        )
-        .setFooter({ text: `${bar} \`${formatDuration(elapsed)} / ${queue.currentSong.duration}\`` })
-        .setThumbnail(queue.currentSong.thumbnail)
-        .setColor(0x2f3136)
-        .setTimestamp();
-
-      queue.currentMessage.edit({ embeds: [embed] }).catch(() => {});
-    }
-  });
-}, 10000);
-
 // Player events
 player.on(AudioPlayerStatus.Idle, () => {
-  queues.forEach((queue, guildId) => {
-    if (queue.songs.length > 0) playNext(null, guildId);
-    else queue.currentSong = null;
+  queues.forEach((_, guildId) => {
+    playNext(guildId);
   });
 });
 
 // Slash commands
 const commands = [
-  new SlashCommandBuilder().setName('play').setDescription('Play a song or add to the queue.').addStringOption(opt => opt.setName('query').setDescription('YouTube/Spotify link or search term').setRequired(true)),
+  new SlashCommandBuilder()
+    .setName('play')
+    .setDescription('Play a song or add to the queue.')
+    .addStringOption(option => option.setName('query').setDescription('YouTube/Spotify link or search term').setRequired(true)),
   new SlashCommandBuilder().setName('skip').setDescription('Skip current song.'),
   new SlashCommandBuilder().setName('pause').setDescription('Pause music.'),
   new SlashCommandBuilder().setName('resume').setDescription('Resume music.'),
@@ -150,8 +113,10 @@ const rest = new REST({ version: '10' }).setToken(TOKEN);
   try {
     console.log('Registering slash commands...');
     await rest.put(Routes.applicationCommands(CLIENT_ID), { body: commands });
-    console.log('✅ Commands registered successfully!');
-  } catch (err) { console.error(err); }
+    console.log('✅ Commands registered!');
+  } catch (err) {
+    console.error(err);
+  }
 })();
 
 client.once('ready', () => console.log(`✅ Logged in as ${client.user.tag}`));
@@ -162,72 +127,68 @@ client.on('interactionCreate', async interaction => {
 
   await interaction.deferReply();
 
-  if (!queues.has(guildId)) queues.set(guildId, { songs: [], connection: null, currentSong: null, currentMessage: null, startTime: null });
+  // Ensure a queue exists
+  if (!queues.has(guildId)) queues.set(guildId, { songs: [], connection: null, currentSong: null, currentMessage: null, startTime: null, interaction });
   const queue = queues.get(guildId);
+  queue.interaction = interaction;
 
   if (commandName === 'play') {
     const query = interaction.options.getString('query');
     const voiceChannel = interaction.member.voice.channel;
     if (!voiceChannel) return interaction.followUp('❌ You must be in a voice channel.');
-    if (!queue.connection) queue.connection = joinVoiceChannel({ channelId: voiceChannel.id, guildId, adapterCreator: interaction.guild.voiceAdapterCreator });
+
+    if (!queue.connection) queue.connection = joinVoiceChannel({
+      channelId: voiceChannel.id,
+      guildId,
+      adapterCreator: interaction.guild.voiceAdapterCreator
+    });
 
     try {
       let results = [];
       if (play.sp_validate(query) === 'track') {
-        const track = await play.spotify(query);
-        results = await play.search(`${track.name} ${track.artists[0].name}`, { limit: 5 });
+        const spotifyTrack = await play.spotify(query);
+        results = await play.search(`${spotifyTrack.name} ${spotifyTrack.artists[0].name}`, { limit: 1 });
       } else if (play.yt_validate(query) === 'video') {
         const video = await play.video_info(query);
         results = [video.video_details];
       } else {
-        results = await play.search(query, { limit: 5 });
+        results = await play.search(query, { limit: 1 });
       }
 
       if (!results.length) return interaction.followUp('❌ No results found.');
 
-      if (results.length === 1) {
-        const song = createSongObject(results[0], interaction.user.username);
-        queue.songs.push(song);
-        if (!queue.currentSong) playNext(interaction, guildId);
-        return interaction.followUp(`✅ Added **${song.title}** to the queue!`);
-      }
+      const song = createSongObject(results[0], interaction.user.username);
+      queue.songs.push(song);
 
-      // Multiple results: buttons
-      const row = new ActionRowBuilder();
-      results.forEach((s, i) => {
-        const title = s.title.length > 25 ? s.title.slice(0, 22) + '...' : s.title;
-        row.addComponents(new ButtonBuilder().setCustomId(`selectSong_${i}`).setLabel(title).setStyle(ButtonStyle.Primary));
-      });
-
-      const msg = await interaction.followUp({ content: 'Select a song:', components: [row], fetchReply: true });
-      const collector = msg.createMessageComponentCollector({ time: 15000 });
-
-      collector.on('collect', async btnInteraction => {
-        if (!btnInteraction.isButton()) return;
-        const index = parseInt(btnInteraction.customId.split('_')[1]);
-        const song = createSongObject(results[index], interaction.user.username);
-        queue.songs.push(song);
-        if (!queue.currentSong) playNext(interaction, guildId);
-        await btnInteraction.update({ content: `✅ Added **${song.title}** to the queue!`, components: [] });
-        collector.stop();
-      });
-
-      collector.on('end', () => msg.edit({ components: [] }));
-
+      if (!queue.currentSong) playNext(guildId);
+      else return interaction.followUp(`✅ Added **${song.title}** to the queue!`);
     } catch (err) {
       console.error(err);
       return interaction.followUp('❌ Error searching for that song.');
     }
   }
 
-  else if (commandName === 'skip') { player.stop(true); interaction.followUp('⏭️ Skipped current song.'); }
-  else if (commandName === 'pause') { player.pause(); interaction.followUp('⏸️ Music paused.'); }
-  else if (commandName === 'resume') { player.unpause(); interaction.followUp('▶️ Resumed.'); }
+  else if (commandName === 'skip') {
+    player.stop(true);
+    interaction.followUp('⏭️ Skipped current song.');
+  }
+
+  else if (commandName === 'pause') {
+    player.pause();
+    interaction.followUp('⏸️ Music paused.');
+  }
+
+  else if (commandName === 'resume') {
+    player.unpause();
+    interaction.followUp('▶️ Resumed.');
+  }
+
   else if (commandName === 'queue') {
     if (!queue.songs.length) return interaction.followUp('📭 Queue is empty.');
-    const q = queue.songs.map((s, i) => `**${i + 1}.** [${s.title}](${s.url}) • ${s.duration}`).join('\n');
-    interaction.followUp({ embeds: [new EmbedBuilder().setTitle('🎶 Queue').setDescription(q).setColor(0x2f3136)] });
+    const q = queue.songs.map((s,i) => `**${i+1}.** [${s.title}](${s.url}) • ${s.duration}`).join('\n');
+    interaction.followUp({ embeds: [new EmbedBuilder().setTitle('🎶 Current Queue').setDescription(q).setColor(0x2f3136)] });
   }
+
   else if (commandName === 'stop') {
     queue.songs = [];
     player.stop(true);
