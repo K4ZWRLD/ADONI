@@ -43,19 +43,15 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates]
 });
 
-// Initialize DisTube with error handling
+// Initialize DisTube
 const distube = new DisTube(client, {
   emitNewSongOnly: true,
   ffmpeg: {
     path: ffmpeg
   },
   plugins: [
-    new SpotifyPlugin({
-      emitEventsAfterFetching: true
-    }),
-    new YtDlpPlugin({
-      update: false
-    })
+    new SpotifyPlugin(),
+    new YtDlpPlugin()
   ],
   searchSongs: 1,
   nsfw: false,
@@ -264,11 +260,7 @@ distube.on('addList', (queue, playlist) => {
 });
 
 distube.on('finish', queue => {
-  queue.textChannel.send('✅ Queue finished! Leaving voice channel.');
-});
-
-distube.on('empty', queue => {
-  queue.textChannel.send('⚠️ Voice channel is empty. Leaving...');
+  queue.textChannel.send('✅ Queue finished!');
 });
 
 distube.on('error', (channel, err) => {
